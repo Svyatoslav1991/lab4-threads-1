@@ -1,12 +1,10 @@
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Test Widgets Concurrent)
 
-set(MYPOINT_TEST_TARGET test_mypoint)
-
-add_executable(${MYPOINT_TEST_TARGET}
+add_executable(test_mypoint
     test_mypoint.cpp
 )
 
-target_link_libraries(${MYPOINT_TEST_TARGET}
+target_link_libraries(test_mypoint
     PRIVATE
         lab4_threads_1_core
         Qt${QT_VERSION_MAJOR}::Test
@@ -14,4 +12,18 @@ target_link_libraries(${MYPOINT_TEST_TARGET}
         Qt${QT_VERSION_MAJOR}::Concurrent
 )
 
-add_test(NAME ${MYPOINT_TEST_TARGET} COMMAND ${MYPOINT_TEST_TARGET})
+add_test(NAME test_mypoint COMMAND test_mypoint)
+
+add_executable(test_worker
+    test_worker.cpp
+)
+
+target_link_libraries(test_worker
+    PRIVATE
+        lab4_threads_1_core
+        Qt${QT_VERSION_MAJOR}::Test
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Concurrent
+)
+
+add_test(NAME test_worker COMMAND test_worker)
