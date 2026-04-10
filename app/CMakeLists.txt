@@ -6,12 +6,14 @@ set(CORE_SOURCES
     include/mypoint.h
     include/worker.h
     include/pointswidget.h
+    include/myrunnable.h
 
     src/mainwindow.cpp
     src/mypoint.cpp
     src/mainwindow.ui
     src/worker.cpp
     src/pointswidget.cpp
+    src/myrunnable.cpp
 )
 
 set(APP_SOURCES

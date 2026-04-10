@@ -5,12 +5,15 @@
 #include <QColor>
 #include <QStatusBar>
 #include <QThread>
+#include <QThreadPool>
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
+#include "myrunnable.h"
 #include "pointswidget.h"
 #include "worker.h"
 
+//--------------------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -26,69 +29,57 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 //--------------------------------------------------------------------------
-
 MainWindow::~MainWindow()
 {
     waitForFutures();
+    QThreadPool::globalInstance()->waitForDone();
     destroyWorkers();
     delete ui;
 }
 
 //--------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------
-
 void MainWindow::slotQtConcurrent()
 {
-    if (hasRunningFutures()) {
+    if (hasRunningTasks()) {
         statusBar()->showMessage(
             QStringLiteral("Предыдущий запуск ещё не завершён."));
         return;
     }
 
-    if (m_pointsWidget == nullptr || m_workers.isEmpty()) {
-        statusBar()->showMessage(
-            QStringLiteral("Нет доступной области рисования или worker-объектов."));
-        return;
-    }
-
-    slotClear();
-    m_x = 0;
+    prepareWorkersForRun();
     m_futures.clear();
 
-    const int workerCount = m_workers.size();
-    const int availableWidth = qMax(1, m_pointsWidget->width() - 20);
-
-    constexpr int xStep = 1;
-    const int totalPointsThatFit = qMax(1, availableWidth / xStep);
-    const int stepsPerWorker = qMax(1, totalPointsThatFit / workerCount);
-
-    constexpr qsizetype delayIterations = 3'000'000;
-
     for (Worker *worker : m_workers) {
-        worker->setSteps(stepsPerWorker);
-        worker->setDelayIterations(delayIterations);
-
         m_futures.push_back(QtConcurrent::run(worker, &Worker::doWork));
     }
 
     statusBar()->showMessage(
-        QStringLiteral("QtConcurrent запущен: workers=%1, stepsPerWorker=%2, totalPoints≈%3")
-            .arg(workerCount)
-            .arg(stepsPerWorker)
-            .arg(workerCount * stepsPerWorker));
+        QStringLiteral("QtConcurrent запущен, worker-объектов: %1")
+            .arg(m_workers.size()));
 }
 
 //--------------------------------------------------------------------------
-
 void MainWindow::slotQRunnable()
 {
+    if (hasRunningTasks()) {
+        statusBar()->showMessage(
+            QStringLiteral("Предыдущий запуск ещё не завершён."));
+        return;
+    }
+
+    prepareWorkersForRun();
+
+    for (Worker *worker : m_workers) {
+        MyRunnable *runnable = new MyRunnable(worker);
+        QThreadPool::globalInstance()->start(runnable);
+    }
+
     statusBar()->showMessage(
-        QStringLiteral("Запуск через QRunnable будет добавлен следующим шагом."));
+        QStringLiteral("QRunnable запущен, worker-объектов: %1")
+            .arg(m_workers.size()));
 }
 
 //--------------------------------------------------------------------------
-
 void MainWindow::slotClear()
 {
     if (m_pointsWidget == nullptr) {
@@ -100,7 +91,6 @@ void MainWindow::slotClear()
 }
 
 //--------------------------------------------------------------------------
-
 void MainWindow::slotAddPoint(MyPoint point)
 {
     if (m_pointsWidget == nullptr) {
@@ -111,7 +101,20 @@ void MainWindow::slotAddPoint(MyPoint point)
 }
 
 //--------------------------------------------------------------------------
+void MainWindow::slotWorkerFinished()
+{
+    if (m_activeWorkers <= 0) {
+        return;
+    }
 
+    --m_activeWorkers;
+
+    if (m_activeWorkers == 0) {
+        statusBar()->showMessage(QStringLiteral("Все worker-объекты завершили работу"));
+    }
+}
+
+//--------------------------------------------------------------------------
 void MainWindow::initializeUi()
 {
     setWindowTitle(QStringLiteral("Потоки + worker"));
@@ -121,7 +124,6 @@ void MainWindow::initializeUi()
 }
 
 //--------------------------------------------------------------------------
-
 void MainWindow::connectActions()
 {
     connect(ui->actionQtConcurrent, &QAction::triggered,
@@ -135,7 +137,6 @@ void MainWindow::connectActions()
 }
 
 //--------------------------------------------------------------------------
-
 void MainWindow::setupPointsWidget()
 {
     auto *layout = new QVBoxLayout(ui->centralwidget);
@@ -147,7 +148,6 @@ void MainWindow::setupPointsWidget()
 }
 
 //--------------------------------------------------------------------------
-
 void MainWindow::createWorkers()
 {
     const int workerCount = qMax(1, QThread::idealThreadCount());
@@ -165,8 +165,6 @@ void MainWindow::createWorkers()
 
     constexpr int startY = 40;
     constexpr int deltaY = 25;
-    constexpr int stepsCount = 400;
-    constexpr qsizetype delayIterations = 20000;
 
     m_workers.reserve(workerCount);
 
@@ -177,11 +175,15 @@ void MainWindow::createWorkers()
         Worker *worker = new Worker(y,
                                     &m_x,
                                     color,
-                                    stepsCount,
-                                    delayIterations);
+                                    0,
+                                    0);
 
         connect(worker, &Worker::signalAddPoint,
                 this, &MainWindow::slotAddPoint,
+                Qt::QueuedConnection);
+
+        connect(worker, &Worker::endWork,
+                this, &MainWindow::slotWorkerFinished,
                 Qt::QueuedConnection);
 
         m_workers.push_back(worker);
@@ -189,7 +191,6 @@ void MainWindow::createWorkers()
 }
 
 //--------------------------------------------------------------------------
-
 void MainWindow::destroyWorkers()
 {
     qDeleteAll(m_workers);
@@ -197,7 +198,6 @@ void MainWindow::destroyWorkers()
 }
 
 //--------------------------------------------------------------------------
-
 void MainWindow::waitForFutures()
 {
     for (QFuture<void> &future : m_futures) {
@@ -208,14 +208,40 @@ void MainWindow::waitForFutures()
 }
 
 //--------------------------------------------------------------------------
-
-bool MainWindow::hasRunningFutures() const
+bool MainWindow::hasRunningTasks() const noexcept
 {
-    for (const QFuture<void> &future : m_futures) {
-        if (!future.isFinished()) {
-            return true;
-        }
+    return m_activeWorkers > 0;
+}
+
+//--------------------------------------------------------------------------
+void MainWindow::prepareWorkersForRun()
+{
+    slotClear();
+    m_x = 0;
+    m_activeWorkers = m_workers.size();
+
+    const int stepsPerWorker = calculateStepsPerWorker();
+    const qsizetype delayIterations = calculateDelayIterations();
+
+    for (Worker *worker : m_workers) {
+        worker->setSteps(stepsPerWorker);
+        worker->setDelayIterations(delayIterations);
+    }
+}
+
+//--------------------------------------------------------------------------
+int MainWindow::calculateStepsPerWorker() const noexcept
+{
+    if (m_pointsWidget == nullptr || m_workers.isEmpty()) {
+        return 1;
     }
 
-    return false;
+    const int availableWidth = qMax(1, m_pointsWidget->width() - 20);
+    return qMax(1, availableWidth / m_workers.size());
+}
+
+//--------------------------------------------------------------------------
+qsizetype MainWindow::calculateDelayIterations() const noexcept
+{
+    return 1'000'000;
 }

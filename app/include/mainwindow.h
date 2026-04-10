@@ -21,11 +21,11 @@ class Worker;
  *
  * @details
  * На текущем этапе класс отвечает за:
- * - инициализацию пользовательского интерфейса;
+ * - инициализацию UI;
  * - создание области отображения точек;
- * - хранение общей координаты X;
  * - создание рабочих объектов Worker;
  * - запуск Worker через QtConcurrent::run();
+ * - запуск Worker через QRunnable + QThreadPool;
  * - приём точек от Worker и их отображение.
  */
 class MainWindow final : public QMainWindow
@@ -43,7 +43,7 @@ private slots:
     void slotQtConcurrent();
 
     /**
-     * @brief Заглушка под будущий запуск worker'ов через QRunnable.
+     * @brief Запускает Worker-объекты через QRunnable.
      */
     void slotQRunnable();
 
@@ -57,6 +57,11 @@ private slots:
      * @param point Точка для добавления.
      */
     void slotAddPoint(MyPoint point);
+
+    /**
+     * @brief Обрабатывает завершение одного Worker.
+     */
+    void slotWorkerFinished();
 
 private:
     /**
@@ -85,21 +90,44 @@ private:
     void destroyWorkers();
 
     /**
-     * @brief Ожидает завершения всех ранее запущенных задач QtConcurrent.
+     * @brief Ожидает завершения всех задач QtConcurrent.
      */
     void waitForFutures();
 
     /**
      * @brief Проверяет, выполняется ли сейчас хотя бы одна задача.
      */
-    bool hasRunningFutures() const;
+    bool hasRunningTasks() const noexcept;
+
+    /**
+     * @brief Подготавливает Worker-объекты к новому запуску.
+     *
+     * @details
+     * Метод:
+     * - очищает область отображения;
+     * - сбрасывает общую координату X;
+     * - рассчитывает число шагов на один Worker по ширине окна;
+     * - задаёт программную задержку.
+     */
+    void prepareWorkersForRun();
+
+    /**
+     * @brief Вычисляет число шагов на один Worker по текущей ширине области рисования.
+     */
+    int calculateStepsPerWorker() const noexcept;
+
+    /**
+     * @brief Возвращает длину программной задержки.
+     */
+    qsizetype calculateDelayIterations() const noexcept;
 
 private:
     Ui::MainWindow *ui = nullptr;           ///< Сгенерированный интерфейс формы.
     PointsWidget *m_pointsWidget = nullptr; ///< Область отображения точек.
     QVector<Worker *> m_workers;            ///< Рабочие объекты.
-    QVector<QFuture<void>> m_futures;       ///< Активные/завершённые задачи QtConcurrent.
+    QVector<QFuture<void>> m_futures;       ///< Запуски через QtConcurrent.
     int m_x = 0;                            ///< Общая для всех worker'ов координата X.
+    int m_activeWorkers = 0;                ///< Число worker'ов, работающих в текущем запуске.
 };
 
 #endif // MAINWINDOW_H
