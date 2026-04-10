@@ -4,10 +4,12 @@ set(CORE_TARGET lab4_threads_1_core)
 set(CORE_SOURCES
     include/mainwindow.h
     include/mypoint.h
+    include/worker.h
 
     src/mainwindow.cpp
     src/mypoint.cpp
     src/mainwindow.ui
+    src/worker.cpp
 )
 
 set(APP_SOURCES
