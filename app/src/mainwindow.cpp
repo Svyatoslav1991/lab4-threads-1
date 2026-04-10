@@ -34,7 +34,7 @@ MainWindow::~MainWindow()
 void MainWindow::slotQtConcurrent()
 {
     statusBar()->showMessage(
-        QStringLiteral("Запуск через QtConcurrent будет добавлен следующим шагом."));
+                QStringLiteral("Запуск через QtConcurrent будет добавлен следующим шагом."));
 }
 
 //--------------------------------------------------------------------------
@@ -42,7 +42,7 @@ void MainWindow::slotQtConcurrent()
 void MainWindow::slotQRunnable()
 {
     statusBar()->showMessage(
-        QStringLiteral("Запуск через QRunnable будет добавлен следующим шагом."));
+                QStringLiteral("Запуск через QRunnable будет добавлен следующим шагом."));
 }
 
 //--------------------------------------------------------------------------
@@ -109,16 +109,21 @@ void MainWindow::setupPointsWidget()
 void MainWindow::test()
 {
     slotClear();
-    m_x = 10;
 
-    Worker worker(
-        80,         // фиксированная координата Y
-        &m_x,       // общая координата X
-        Qt::red,    // цвет
-        50,         // количество точек
-        20000,      // программная задержка для наглядности
-        this
-    );
+    constexpr int startX = 10;
+    constexpr int workerY = 80;
+    constexpr int stepsCount = 400;
+    constexpr qsizetype delayIterations = 20000;
+    const QColor workerColor = Qt::red;
+
+    m_x = startX;
+
+    Worker worker(workerY,
+                  &m_x,
+                  workerColor,
+                  stepsCount,
+                  delayIterations,
+                  this);
 
     connect(&worker, &Worker::signalAddPoint,
             this, &MainWindow::slotAddPoint);
@@ -126,6 +131,6 @@ void MainWindow::test()
     worker.doWork();
 
     statusBar()->showMessage(
-        QStringLiteral("Тестовый прогон Worker завершён, точек: %1")
-            .arg(m_pointsWidget != nullptr ? m_pointsWidget->pointCount() : 0));
+                QStringLiteral("Тестовый прогон Worker завершён, точек: %1")
+                .arg(m_pointsWidget != nullptr ? m_pointsWidget->pointCount() : 0));
 }
