@@ -53,6 +53,20 @@ qsizetype Worker::delayIterations() const noexcept
     return m_delayIterations;
 }
 
+//--------------------------------------------------------------------------
+
+void Worker::setSteps(int steps) noexcept
+{
+    m_steps = std::max(0, steps);
+}
+
+//--------------------------------------------------------------------------
+
+void Worker::setDelayIterations(qsizetype delayIterations) noexcept
+{
+    m_delayIterations = std::max<qsizetype>(0, delayIterations);
+}
+
 //------------------------------------------------------------------------------------
 
 void Worker::doWork()

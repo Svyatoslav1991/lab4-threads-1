@@ -68,6 +68,18 @@ public:
      */
     qsizetype delayIterations() const noexcept;
 
+    /**
+     * @brief Устанавливает количество шагов.
+     * @param steps Новое количество шагов.
+     */
+    void setSteps(int steps) noexcept;
+
+    /**
+     * @brief Устанавливает число итераций программной задержки.
+     * @param delayIterations Новое значение задержки.
+     */
+    void setDelayIterations(qsizetype delayIterations) noexcept;
+
 public slots:
     /**
      * @brief Выполняет полезную работу worker'а.

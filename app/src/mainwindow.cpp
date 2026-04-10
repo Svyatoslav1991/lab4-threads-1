@@ -36,6 +36,8 @@ MainWindow::~MainWindow()
 
 //--------------------------------------------------------------------------
 
+//--------------------------------------------------------------------------
+
 void MainWindow::slotQtConcurrent()
 {
     if (hasRunningFutures()) {
@@ -44,17 +46,37 @@ void MainWindow::slotQtConcurrent()
         return;
     }
 
+    if (m_pointsWidget == nullptr || m_workers.isEmpty()) {
+        statusBar()->showMessage(
+            QStringLiteral("Нет доступной области рисования или worker-объектов."));
+        return;
+    }
+
     slotClear();
     m_x = 0;
     m_futures.clear();
 
+    const int workerCount = m_workers.size();
+    const int availableWidth = qMax(1, m_pointsWidget->width() - 20);
+
+    constexpr int xStep = 1;
+    const int totalPointsThatFit = qMax(1, availableWidth / xStep);
+    const int stepsPerWorker = qMax(1, totalPointsThatFit / workerCount);
+
+    constexpr qsizetype delayIterations = 3'000'000;
+
     for (Worker *worker : m_workers) {
+        worker->setSteps(stepsPerWorker);
+        worker->setDelayIterations(delayIterations);
+
         m_futures.push_back(QtConcurrent::run(worker, &Worker::doWork));
     }
 
     statusBar()->showMessage(
-        QStringLiteral("QtConcurrent запущен, worker-объектов: %1")
-            .arg(m_workers.size()));
+        QStringLiteral("QtConcurrent запущен: workers=%1, stepsPerWorker=%2, totalPoints≈%3")
+            .arg(workerCount)
+            .arg(stepsPerWorker)
+            .arg(workerCount * stepsPerWorker));
 }
 
 //--------------------------------------------------------------------------
