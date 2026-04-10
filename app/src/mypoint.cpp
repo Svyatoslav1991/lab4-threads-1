@@ -1,8 +1,8 @@
 #include "mypoint.h"
 
+#include <QBrush>
 #include <QPainter>
 #include <QPen>
-#include <QRect>
 
 MyPoint::MyPoint(const QPoint &pt, const QColor &color)
     : m_point(pt)
@@ -10,32 +10,34 @@ MyPoint::MyPoint(const QPoint &pt, const QColor &color)
 {
 }
 
-//----------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 void MyPoint::draw(QPainter &painter) const
 {
     painter.save();
 
-    QPen pen(m_color);
-    pen.setWidth(1);
-    painter.setPen(pen);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QBrush(m_color));
 
-    const QRect viewport = painter.viewport();
-    const int bottomY = viewport.bottom();
+    constexpr int pointSize = 4;
+    const int halfSize = pointSize / 2;
 
-    painter.drawLine(m_point.x(), m_point.y(), m_point.x(), bottomY);
+    painter.drawEllipse(m_point.x() - halfSize,
+                        m_point.y() - halfSize,
+                        pointSize,
+                        pointSize);
 
     painter.restore();
 }
 
-//----------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 const QPoint &MyPoint::point() const noexcept
 {
     return m_point;
 }
 
-//----------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 const QColor &MyPoint::color() const noexcept
 {
