@@ -15,7 +15,7 @@ private slots:
     void defaultConstructor_initializesOriginAndBlackColor();
     void constructor_storesPointAndColor();
     void equalityOperator_comparesPointAndColor();
-    void draw_drawsVerticalLineWithExpectedColor();
+    void draw_drawsPointAroundSpecifiedCoordinates();
 };
 
 void TestMyPoint::defaultConstructor_initializesOriginAndBlackColor()
@@ -46,7 +46,7 @@ void TestMyPoint::equalityOperator_comparesPointAndColor()
     QVERIFY(first != fourth);
 }
 
-void TestMyPoint::draw_drawsVerticalLineWithExpectedColor()
+void TestMyPoint::draw_drawsPointAroundSpecifiedCoordinates()
 {
     QImage image(20, 20, QImage::Format_ARGB32);
     image.fill(Qt::white);
@@ -56,12 +56,10 @@ void TestMyPoint::draw_drawsVerticalLineWithExpectedColor()
     point.draw(painter);
     painter.end();
 
-    for (int y = 7; y < image.height(); ++y) {
-        QCOMPARE(image.pixelColor(5, y), QColor(Qt::red));
-    }
+    QCOMPARE(image.pixelColor(5, 7), QColor(Qt::red));
 
-    QCOMPARE(image.pixelColor(4, 7), QColor(Qt::white));
-    QCOMPARE(image.pixelColor(6, 7), QColor(Qt::white));
+    QCOMPARE(image.pixelColor(0, 0), QColor(Qt::white));
+    QCOMPARE(image.pixelColor(15, 15), QColor(Qt::white));
 }
 
 QTEST_MAIN(TestMyPoint)

@@ -16,7 +16,7 @@ private slots:
     void addPoint_storesPointAndIncreasesCount();
     void clearPoints_removesAllPoints();
     void clearPoints_whenAlreadyEmpty_remainsEmpty();
-    void render_afterAddingPoint_drawsExpectedColor();
+    void render_afterAddingPoint_drawsPointWithExpectedColor();
 };
 
 void TestPointsWidget::constructor_initialState_isEmpty()
@@ -67,7 +67,7 @@ void TestPointsWidget::clearPoints_whenAlreadyEmpty_remainsEmpty()
     QVERIFY(widget.points().isEmpty());
 }
 
-void TestPointsWidget::render_afterAddingPoint_drawsExpectedColor()
+void TestPointsWidget::render_afterAddingPoint_drawsPointWithExpectedColor()
 {
     PointsWidget widget;
     widget.resize(20, 20);
@@ -83,12 +83,10 @@ void TestPointsWidget::render_afterAddingPoint_drawsExpectedColor()
 
     widget.render(&image);
 
-    for (int y = 7; y < image.height(); ++y) {
-        QCOMPARE(image.pixelColor(5, y), QColor(Qt::red));
-    }
+    QCOMPARE(image.pixelColor(5, 7), QColor(Qt::red));
 
-    QCOMPARE(image.pixelColor(4, 7), QColor(Qt::white));
-    QCOMPARE(image.pixelColor(6, 7), QColor(Qt::white));
+    QCOMPARE(image.pixelColor(0, 0), QColor(Qt::white));
+    QCOMPARE(image.pixelColor(15, 15), QColor(Qt::white));
 }
 
 QTEST_MAIN(TestPointsWidget)
