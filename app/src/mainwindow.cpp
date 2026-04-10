@@ -3,6 +3,10 @@
 
 #include <QAction>
 #include <QStatusBar>
+#include <QVBoxLayout>
+
+#include "pointswidget.h"
+#include "worker.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -10,18 +14,22 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    qRegisterMetaType<MyPoint>("MyPoint");
+
     initializeUi();
+    setupPointsWidget();
     connectActions();
+    test();
 }
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 void MainWindow::slotQtConcurrent()
 {
@@ -29,7 +37,7 @@ void MainWindow::slotQtConcurrent()
         QStringLiteral("Запуск через QtConcurrent будет добавлен следующим шагом."));
 }
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 void MainWindow::slotQRunnable()
 {
@@ -37,15 +45,32 @@ void MainWindow::slotQRunnable()
         QStringLiteral("Запуск через QRunnable будет добавлен следующим шагом."));
 }
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 void MainWindow::slotClear()
 {
-    statusBar()->showMessage(
-        QStringLiteral("Очистка области отображения будет добавлена следующим шагом."));
+    if (m_pointsWidget == nullptr) {
+        return;
+    }
+
+    m_pointsWidget->clearPoints();
+    m_x = 0;
+
+    statusBar()->showMessage(QStringLiteral("Область отображения очищена"));
 }
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+
+void MainWindow::slotAddPoint(MyPoint point)
+{
+    if (m_pointsWidget == nullptr) {
+        return;
+    }
+
+    m_pointsWidget->addPoint(point);
+}
+
+//--------------------------------------------------------------------------
 
 void MainWindow::initializeUi()
 {
@@ -53,7 +78,7 @@ void MainWindow::initializeUi()
     statusBar()->showMessage(QStringLiteral("Приложение готово к работе"));
 }
 
-//----------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 void MainWindow::connectActions()
 {
@@ -65,4 +90,42 @@ void MainWindow::connectActions()
 
     connect(ui->actionClear, &QAction::triggered,
             this, &MainWindow::slotClear);
+}
+
+//--------------------------------------------------------------------------
+
+void MainWindow::setupPointsWidget()
+{
+    auto *layout = new QVBoxLayout(ui->centralwidget);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    m_pointsWidget = new PointsWidget(ui->centralwidget);
+    layout->addWidget(m_pointsWidget);
+}
+
+//--------------------------------------------------------------------------
+
+void MainWindow::test()
+{
+    slotClear();
+    m_x = 10;
+
+    Worker worker(
+        80,         // фиксированная координата Y
+        &m_x,       // общая координата X
+        Qt::red,    // цвет
+        50,         // количество точек
+        20000,      // программная задержка для наглядности
+        this
+    );
+
+    connect(&worker, &Worker::signalAddPoint,
+            this, &MainWindow::slotAddPoint);
+
+    worker.doWork();
+
+    statusBar()->showMessage(
+        QStringLiteral("Тестовый прогон Worker завершён, точек: %1")
+            .arg(m_pointsWidget != nullptr ? m_pointsWidget->pointCount() : 0));
 }

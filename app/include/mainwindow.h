@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QVector>
+
+#include "mypoint.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -9,17 +12,19 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+class PointsWidget;
+
 /**
  * @brief Главное окно первого приложения лабораторной работы по потокам.
  *
  * @details
  * На текущем этапе класс отвечает за:
  * - инициализацию пользовательского интерфейса;
- * - подключение QAction из меню и toolbar;
- * - базовые слоты-команды приложения.
- *
- * Логика отображения точек и запуска рабочих объектов будет добавлена
- * на следующих шагах.
+ * - создание области отображения точек;
+ * - хранение общей координаты X;
+ * - приём точек от Worker;
+ * - очистку области отображения;
+ * - тестовый запуск Worker в интерфейсном потоке.
  */
 class MainWindow final : public QMainWindow
 {
@@ -49,9 +54,15 @@ private slots:
     void slotQRunnable();
 
     /**
-     * @brief Заглушка под будущую очистку области отображения.
+     * @brief Очищает область отображения.
      */
     void slotClear();
+
+    /**
+     * @brief Принимает новую точку от Worker и передаёт её в виджет отображения.
+     * @param point Точка для добавления.
+     */
+    void slotAddPoint(MyPoint point);
 
 private:
     /**
@@ -64,8 +75,25 @@ private:
      */
     void connectActions();
 
+    /**
+     * @brief Создаёт и размещает виджет отображения точек в centralwidget.
+     */
+    void setupPointsWidget();
+
+    /**
+     * @brief Выполняет тестовый прогон Worker в интерфейсном потоке.
+     *
+     * @details
+     * Метод соответствует первому этапу лабораторной работы:
+     * создаётся Worker, настраивается соединение signal-slot и вызывается doWork()
+     * без запуска отдельного потока.
+     */
+    void test();
+
 private:
-    Ui::MainWindow *ui = nullptr; ///< Сгенерированный интерфейс формы.
+    Ui::MainWindow *ui = nullptr;              ///< Сгенерированный интерфейс формы.
+    PointsWidget *m_pointsWidget = nullptr;    ///< Область отображения точек.
+    int m_x = 0;                               ///< Общая для всех worker'ов координата X.
 };
 
 #endif // MAINWINDOW_H
