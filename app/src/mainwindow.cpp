@@ -2,8 +2,11 @@
 #include "ui_mainwindow.h"
 
 #include <QAction>
+#include <QColor>
 #include <QStatusBar>
+#include <QThread>
 #include <QVBoxLayout>
+#include <QtConcurrent>
 
 #include "pointswidget.h"
 #include "worker.h"
@@ -18,14 +21,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     initializeUi();
     setupPointsWidget();
+    createWorkers();
     connectActions();
-    test();
 }
 
 //--------------------------------------------------------------------------
 
 MainWindow::~MainWindow()
 {
+    waitForFutures();
+    destroyWorkers();
     delete ui;
 }
 
@@ -33,8 +38,23 @@ MainWindow::~MainWindow()
 
 void MainWindow::slotQtConcurrent()
 {
+    if (hasRunningFutures()) {
+        statusBar()->showMessage(
+            QStringLiteral("Предыдущий запуск ещё не завершён."));
+        return;
+    }
+
+    slotClear();
+    m_x = 0;
+    m_futures.clear();
+
+    for (Worker *worker : m_workers) {
+        m_futures.push_back(QtConcurrent::run(worker, &Worker::doWork));
+    }
+
     statusBar()->showMessage(
-                QStringLiteral("Запуск через QtConcurrent будет добавлен следующим шагом."));
+        QStringLiteral("QtConcurrent запущен, worker-объектов: %1")
+            .arg(m_workers.size()));
 }
 
 //--------------------------------------------------------------------------
@@ -42,7 +62,7 @@ void MainWindow::slotQtConcurrent()
 void MainWindow::slotQRunnable()
 {
     statusBar()->showMessage(
-                QStringLiteral("Запуск через QRunnable будет добавлен следующим шагом."));
+        QStringLiteral("Запуск через QRunnable будет добавлен следующим шагом."));
 }
 
 //--------------------------------------------------------------------------
@@ -54,8 +74,6 @@ void MainWindow::slotClear()
     }
 
     m_pointsWidget->clearPoints();
-    m_x = 0;
-
     statusBar()->showMessage(QStringLiteral("Область отображения очищена"));
 }
 
@@ -75,7 +93,9 @@ void MainWindow::slotAddPoint(MyPoint point)
 void MainWindow::initializeUi()
 {
     setWindowTitle(QStringLiteral("Потоки + worker"));
-    statusBar()->showMessage(QStringLiteral("Приложение готово к работе"));
+    statusBar()->showMessage(
+        QStringLiteral("QThread::idealThreadCount()=%1")
+            .arg(QThread::idealThreadCount()));
 }
 
 //--------------------------------------------------------------------------
@@ -106,31 +126,74 @@ void MainWindow::setupPointsWidget()
 
 //--------------------------------------------------------------------------
 
-void MainWindow::test()
+void MainWindow::createWorkers()
 {
-    slotClear();
+    const int workerCount = qMax(1, QThread::idealThreadCount());
 
-    constexpr int startX = 10;
-    constexpr int workerY = 80;
+    const QVector<QColor> colors = {
+        Qt::red,
+        Qt::blue,
+        Qt::darkGreen,
+        Qt::magenta,
+        Qt::darkYellow,
+        Qt::cyan,
+        Qt::black,
+        Qt::darkRed
+    };
+
+    constexpr int startY = 40;
+    constexpr int deltaY = 25;
     constexpr int stepsCount = 400;
     constexpr qsizetype delayIterations = 20000;
-    const QColor workerColor = Qt::red;
 
-    m_x = startX;
+    m_workers.reserve(workerCount);
 
-    Worker worker(workerY,
-                  &m_x,
-                  workerColor,
-                  stepsCount,
-                  delayIterations,
-                  this);
+    for (int index = 0; index < workerCount; ++index) {
+        const int y = startY + index * deltaY;
+        const QColor color = colors.at(index % colors.size());
 
-    connect(&worker, &Worker::signalAddPoint,
-            this, &MainWindow::slotAddPoint);
+        Worker *worker = new Worker(y,
+                                    &m_x,
+                                    color,
+                                    stepsCount,
+                                    delayIterations);
 
-    worker.doWork();
+        connect(worker, &Worker::signalAddPoint,
+                this, &MainWindow::slotAddPoint,
+                Qt::QueuedConnection);
 
-    statusBar()->showMessage(
-                QStringLiteral("Тестовый прогон Worker завершён, точек: %1")
-                .arg(m_pointsWidget != nullptr ? m_pointsWidget->pointCount() : 0));
+        m_workers.push_back(worker);
+    }
+}
+
+//--------------------------------------------------------------------------
+
+void MainWindow::destroyWorkers()
+{
+    qDeleteAll(m_workers);
+    m_workers.clear();
+}
+
+//--------------------------------------------------------------------------
+
+void MainWindow::waitForFutures()
+{
+    for (QFuture<void> &future : m_futures) {
+        future.waitForFinished();
+    }
+
+    m_futures.clear();
+}
+
+//--------------------------------------------------------------------------
+
+bool MainWindow::hasRunningFutures() const
+{
+    for (const QFuture<void> &future : m_futures) {
+        if (!future.isFinished()) {
+            return true;
+        }
+    }
+
+    return false;
 }

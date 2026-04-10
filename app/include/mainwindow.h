@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QFuture>
 #include <QMainWindow>
 #include <QVector>
 
@@ -13,6 +14,7 @@ class MainWindow;
 QT_END_NAMESPACE
 
 class PointsWidget;
+class Worker;
 
 /**
  * @brief Главное окно первого приложения лабораторной работы по потокам.
@@ -22,29 +24,21 @@ class PointsWidget;
  * - инициализацию пользовательского интерфейса;
  * - создание области отображения точек;
  * - хранение общей координаты X;
- * - приём точек от Worker;
- * - очистку области отображения;
- * - тестовый запуск Worker в интерфейсном потоке.
+ * - создание рабочих объектов Worker;
+ * - запуск Worker через QtConcurrent::run();
+ * - приём точек от Worker и их отображение.
  */
 class MainWindow final : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    /**
-     * @brief Создаёт главное окно приложения.
-     * @param parent Родительский виджет.
-     */
     explicit MainWindow(QWidget *parent = nullptr);
-
-    /**
-     * @brief Освобождает ресурсы главного окна.
-     */
     ~MainWindow() override;
 
 private slots:
     /**
-     * @brief Заглушка под будущий запуск worker'ов через QtConcurrent.
+     * @brief Запускает Worker-объекты через QtConcurrent::run().
      */
     void slotQtConcurrent();
 
@@ -81,19 +75,31 @@ private:
     void setupPointsWidget();
 
     /**
-     * @brief Выполняет тестовый прогон Worker в интерфейсном потоке.
-     *
-     * @details
-     * Метод соответствует первому этапу лабораторной работы:
-     * создаётся Worker, настраивается соединение signal-slot и вызывается doWork()
-     * без запуска отдельного потока.
+     * @brief Создаёт рабочие объекты Worker и настраивает их соединения.
      */
-    void test();
+    void createWorkers();
+
+    /**
+     * @brief Освобождает рабочие объекты Worker.
+     */
+    void destroyWorkers();
+
+    /**
+     * @brief Ожидает завершения всех ранее запущенных задач QtConcurrent.
+     */
+    void waitForFutures();
+
+    /**
+     * @brief Проверяет, выполняется ли сейчас хотя бы одна задача.
+     */
+    bool hasRunningFutures() const;
 
 private:
-    Ui::MainWindow *ui = nullptr;              ///< Сгенерированный интерфейс формы.
-    PointsWidget *m_pointsWidget = nullptr;    ///< Область отображения точек.
-    int m_x = 0;                               ///< Общая для всех worker'ов координата X.
+    Ui::MainWindow *ui = nullptr;           ///< Сгенерированный интерфейс формы.
+    PointsWidget *m_pointsWidget = nullptr; ///< Область отображения точек.
+    QVector<Worker *> m_workers;            ///< Рабочие объекты.
+    QVector<QFuture<void>> m_futures;       ///< Активные/завершённые задачи QtConcurrent.
+    int m_x = 0;                            ///< Общая для всех worker'ов координата X.
 };
 
 #endif // MAINWINDOW_H
