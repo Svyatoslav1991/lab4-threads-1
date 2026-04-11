@@ -8,6 +8,7 @@ set(CORE_SOURCES
     include/pointswidget.h
     include/myrunnable.h
     include/workerslauncher.h
+    include/workersrunsettings.h
 
     src/mainwindow.cpp
     src/mypoint.cpp

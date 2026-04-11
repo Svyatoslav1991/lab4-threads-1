@@ -85,8 +85,8 @@ void MainWindow::initializeUi()
 {
     setWindowTitle(QStringLiteral("Потоки + worker"));
     statusBar()->showMessage(
-        QStringLiteral("QThread::idealThreadCount()=%1")
-            .arg(QThread::idealThreadCount()));
+                QStringLiteral("QThread::idealThreadCount()=%1")
+                .arg(QThread::idealThreadCount()));
 }
 
 //--------------------------------------------------------------------------
@@ -141,32 +141,28 @@ void MainWindow::startWorkers(LaunchMode mode)
 
     if (m_workersLauncher->hasRunningTasks()) {
         statusBar()->showMessage(
-            QStringLiteral("Предыдущий запуск ещё не завершён."));
+                    QStringLiteral("Предыдущий запуск ещё не завершён."));
         return;
     }
 
     clearPointsView();
 
-    const int stepsPerWorker = calculateStepsPerWorker();
-    const qsizetype delayIterations = calculateDelayIterations();
-
-    m_workersLauncher->prepareForRun(kStartX,
-                                     stepsPerWorker,
-                                     delayIterations);
+    const WorkersRunSettings settings = createRunSettings();
+    m_workersLauncher->prepareForRun(settings);
 
     switch (mode) {
     case LaunchMode::QtConcurrent:
         m_workersLauncher->launchViaQtConcurrent();
         statusBar()->showMessage(
-            QStringLiteral("QtConcurrent запущен, worker-объектов: %1")
-                .arg(m_workersLauncher->workerCount()));
+                    QStringLiteral("QtConcurrent запущен, worker-объектов: %1")
+                    .arg(m_workersLauncher->workerCount()));
         break;
 
     case LaunchMode::QRunnable:
         m_workersLauncher->launchViaQRunnable();
         statusBar()->showMessage(
-            QStringLiteral("QRunnable запущен, worker-объектов: %1")
-                .arg(m_workersLauncher->workerCount()));
+                    QStringLiteral("QRunnable запущен, worker-объектов: %1")
+                    .arg(m_workersLauncher->workerCount()));
         break;
     }
 }
@@ -184,19 +180,30 @@ void MainWindow::clearPointsView()
 
 //--------------------------------------------------------------------------
 
+WorkersRunSettings MainWindow::createRunSettings() const noexcept
+{
+    WorkersRunSettings settings;
+    settings.startX = kStartX;
+    settings.stepsPerWorker = calculateStepsPerWorker();
+    settings.delayIterations = calculateDelayIterations();
+    return settings;
+}
+
+//--------------------------------------------------------------------------
+
 int MainWindow::calculateStepsPerWorker() const noexcept
 {
     if (m_pointsWidget == nullptr ||
-        m_workersLauncher == nullptr ||
-        m_workersLauncher->workerCount() <= 0) {
+            m_workersLauncher == nullptr ||
+            m_workersLauncher->workerCount() <= 0) {
         return 1;
     }
 
     const int drawableWidth =
-        qMax(1, m_pointsWidget->width() - kStartX - kRightPadding);
+            qMax(1, m_pointsWidget->width() - kStartX - kRightPadding);
 
     const int totalPointSlots =
-        qMax(1, drawableWidth / kXAdvancePerPoint);
+            qMax(1, drawableWidth / kXAdvancePerPoint);
 
     return qMax(1, totalPointSlots / m_workersLauncher->workerCount());
 }

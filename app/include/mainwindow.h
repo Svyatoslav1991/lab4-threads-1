@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 #include "mypoint.h"
+#include "workersrunsettings.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -100,6 +101,11 @@ private:
      * @brief Очищает область отображения без сообщения в status bar.
      */
     void clearPointsView();
+
+    /**
+     * @brief Формирует параметры очередного запуска Worker-объектов.
+     */
+    WorkersRunSettings createRunSettings() const noexcept;
 
     /**
      * @brief Вычисляет число шагов на один Worker по текущей ширине области рисования.

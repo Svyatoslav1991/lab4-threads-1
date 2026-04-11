@@ -42,15 +42,13 @@ WorkersLauncher::~WorkersLauncher()
 
 //--------------------------------------------------------------------------
 
-void WorkersLauncher::prepareForRun(int startX,
-                                    int stepsPerWorker,
-                                    qsizetype delayIterations) noexcept
+void WorkersLauncher::prepareForRun(const WorkersRunSettings &settings) noexcept
 {
-    m_sharedX = startX;
+    m_sharedX = settings.startX;
     m_activeWorkers = m_workers.size();
     m_futures.clear();
 
-    configureWorkers(stepsPerWorker, delayIterations);
+    configureWorkers(settings);
 }
 
 //--------------------------------------------------------------------------
@@ -165,11 +163,10 @@ void WorkersLauncher::connectWorkerSignals(Worker *worker)
 
 //--------------------------------------------------------------------------
 
-void WorkersLauncher::configureWorkers(int stepsPerWorker,
-                                       qsizetype delayIterations) noexcept
+void WorkersLauncher::configureWorkers(const WorkersRunSettings &settings) noexcept
 {
     for (Worker *worker : m_workers) {
-        worker->setSteps(stepsPerWorker);
-        worker->setDelayIterations(delayIterations);
+        worker->setSteps(settings.stepsPerWorker);
+        worker->setDelayIterations(settings.delayIterations);
     }
 }

@@ -3,6 +3,7 @@
 #include <QSignalSpy>
 
 #include "workerslauncher.h"
+#include "workersrunsettings.h"
 
 class TestWorkersLauncher : public QObject
 {
@@ -40,7 +41,12 @@ void TestWorkersLauncher::launchViaQtConcurrent_emitsPointsAndFinishSignal()
     constexpr int stepsPerWorker = 3;
     constexpr qsizetype delayIterations = 0;
 
-    launcher.prepareForRun(startX, stepsPerWorker, delayIterations);
+    WorkersRunSettings settings;
+    settings.startX = startX;
+    settings.stepsPerWorker = stepsPerWorker;
+    settings.delayIterations = delayIterations;
+
+    launcher.prepareForRun(settings);
     launcher.launchViaQtConcurrent();
 
     QTRY_COMPARE(finishSpy.count(), 1);
@@ -65,7 +71,12 @@ void TestWorkersLauncher::launchViaQRunnable_emitsPointsAndFinishSignal()
     constexpr int stepsPerWorker = 2;
     constexpr qsizetype delayIterations = 0;
 
-    launcher.prepareForRun(startX, stepsPerWorker, delayIterations);
+    WorkersRunSettings settings;
+    settings.startX = startX;
+    settings.stepsPerWorker = stepsPerWorker;
+    settings.delayIterations = delayIterations;
+
+    launcher.prepareForRun(settings);
     launcher.launchViaQRunnable();
 
     QTRY_COMPARE(finishSpy.count(), 1);
@@ -85,7 +96,12 @@ void TestWorkersLauncher::waitForFinished_afterLaunch_stopsRunningState()
     constexpr int stepsPerWorker = 5;
     constexpr qsizetype delayIterations = 0;
 
-    launcher.prepareForRun(startX, stepsPerWorker, delayIterations);
+    WorkersRunSettings settings;
+    settings.startX = startX;
+    settings.stepsPerWorker = stepsPerWorker;
+    settings.delayIterations = delayIterations;
+
+    launcher.prepareForRun(settings);
     launcher.launchViaQtConcurrent();
 
     launcher.waitForFinished();

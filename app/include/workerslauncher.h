@@ -1,12 +1,13 @@
 #ifndef WORKERSLAUNCHER_H
 #define WORKERSLAUNCHER_H
 
-#include <QFuture>
 #include <QColor>
+#include <QFuture>
 #include <QObject>
 #include <QVector>
 
 #include "mypoint.h"
+#include "workersrunsettings.h"
 
 class Worker;
 
@@ -17,7 +18,7 @@ class Worker;
  * Класс отвечает за:
  * - создание набора Worker;
  * - настройку их signal-slot соединений;
- * - подготовку worker-ов к новому запуску;
+ * - подготовку worker-объектов к новому запуску;
  * - запуск через QtConcurrent::run();
  * - запуск через QRunnable + QThreadPool;
  * - ожидание завершения запущенных задач.
@@ -34,13 +35,9 @@ public:
 
     /**
      * @brief Подготавливает worker-объекты к новому запуску.
-     * @param startX Начальное значение общей координаты X.
-     * @param stepsPerWorker Количество шагов на один Worker.
-     * @param delayIterations Длина программной задержки.
+     * @param settings Параметры запуска.
      */
-    void prepareForRun(int startX,
-                       int stepsPerWorker,
-                       qsizetype delayIterations) noexcept;
+    void prepareForRun(const WorkersRunSettings &settings) noexcept;
 
     /**
      * @brief Запускает worker-объекты через QtConcurrent::run().
@@ -104,11 +101,9 @@ private:
 
     /**
      * @brief Применяет параметры запуска ко всем Worker.
-     * @param stepsPerWorker Количество шагов на один Worker.
-     * @param delayIterations Длина программной задержки.
+     * @param settings Параметры запуска.
      */
-    void configureWorkers(int stepsPerWorker,
-                          qsizetype delayIterations) noexcept;
+    void configureWorkers(const WorkersRunSettings &settings) noexcept;
 
 private:
     QVector<Worker *> m_workers;      ///< Рабочие объекты.
