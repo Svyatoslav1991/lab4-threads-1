@@ -1,8 +1,15 @@
 #include "mypoint.h"
 
-#include <QBrush>
 #include <QPainter>
 #include <QPen>
+
+namespace
+{
+constexpr int kLineWidth = 2;
+constexpr int kLineHeight = 20;
+}
+
+//--------------------------------------------------------------------------
 
 MyPoint::MyPoint(const QPoint &pt, const QColor &color)
     : m_point(pt)
@@ -17,15 +24,13 @@ void MyPoint::draw(QPainter &painter) const
     painter.save();
 
     QPen pen(m_color);
-    pen.setWidth(2);
+    pen.setWidth(kLineWidth);
     painter.setPen(pen);
-
-    constexpr int lineHeight = 20;
 
     painter.drawLine(m_point.x(),
                      m_point.y(),
                      m_point.x(),
-                     m_point.y() + lineHeight);
+                     m_point.y() + kLineHeight);
 
     painter.restore();
 }
