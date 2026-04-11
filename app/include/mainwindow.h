@@ -1,9 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QFuture>
 #include <QMainWindow>
-#include <QVector>
 
 #include "mypoint.h"
 
@@ -14,7 +12,7 @@ class MainWindow;
 QT_END_NAMESPACE
 
 class PointsWidget;
-class Worker;
+class WorkersLauncher;
 
 /**
  * @brief Главное окно первого приложения лабораторной работы по потокам.
@@ -23,10 +21,8 @@ class Worker;
  * Класс отвечает за:
  * - инициализацию UI;
  * - создание области отображения точек;
- * - создание и настройку Worker-объектов;
- * - запуск Worker через QtConcurrent::run();
- * - запуск Worker через QRunnable + QThreadPool;
- * - приём точек от Worker и их отображение.
+ * - делегирование запуска Worker через WorkersLauncher;
+ * - приём точек и их отображение.
  */
 class MainWindow final : public QMainWindow
 {
@@ -63,15 +59,15 @@ private slots:
     void slotClear();
 
     /**
-     * @brief Принимает новую точку от Worker и передаёт её в виджет отображения.
+     * @brief Принимает новую точку и передаёт её в виджет отображения.
      * @param point Точка для добавления.
      */
     void slotAddPoint(MyPoint point);
 
     /**
-     * @brief Обрабатывает завершение одного Worker.
+     * @brief Обрабатывает завершение текущего запуска всех Worker.
      */
-    void slotWorkerFinished();
+    void slotWorkersFinished();
 
 private:
     /**
@@ -90,20 +86,9 @@ private:
     void setupPointsWidget();
 
     /**
-     * @brief Создаёт рабочие объекты Worker.
+     * @brief Создаёт и настраивает WorkersLauncher.
      */
-    void createWorkers();
-
-    /**
-     * @brief Освобождает рабочие объекты Worker.
-     */
-    void destroyWorkers();
-
-    /**
-     * @brief Настраивает signal-slot соединения для Worker.
-     * @param worker Рабочий объект.
-     */
-    void connectWorkerSignals(Worker *worker);
+    void setupWorkersLauncher();
 
     /**
      * @brief Запускает worker-объекты указанным способом.
@@ -112,49 +97,9 @@ private:
     void startWorkers(LaunchMode mode);
 
     /**
-     * @brief Запускает worker-объекты через QtConcurrent.
-     */
-    void launchWorkersViaQtConcurrent();
-
-    /**
-     * @brief Запускает worker-объекты через QRunnable.
-     */
-    void launchWorkersViaQRunnable();
-
-    /**
-     * @brief Ожидает завершения всех задач QtConcurrent.
-     */
-    void waitForFutures();
-
-    /**
-     * @brief Проверяет, выполняется ли сейчас хотя бы одна задача.
-     */
-    bool hasRunningTasks() const noexcept;
-
-    /**
-     * @brief Очищает область отображения без вывода сообщения в status bar.
+     * @brief Очищает область отображения без сообщения в status bar.
      */
     void clearPointsView();
-
-    /**
-     * @brief Подготавливает Worker-объекты к новому запуску.
-     *
-     * @details
-     * Метод:
-     * - очищает область отображения;
-     * - сбрасывает общую координату X;
-     * - рассчитывает число шагов на один Worker по ширине окна;
-     * - задаёт программную задержку.
-     */
-    void prepareWorkersForRun();
-
-    /**
-     * @brief Применяет параметры запуска ко всем worker-объектам.
-     * @param stepsPerWorker Количество шагов на один Worker.
-     * @param delayIterations Длина программной задержки.
-     */
-    void configureWorkersForRun(int stepsPerWorker,
-                                qsizetype delayIterations) noexcept;
 
     /**
      * @brief Вычисляет число шагов на один Worker по текущей ширине области рисования.
@@ -167,12 +112,9 @@ private:
     qsizetype calculateDelayIterations() const noexcept;
 
 private:
-    Ui::MainWindow *ui = nullptr;           ///< Сгенерированный интерфейс формы.
-    PointsWidget *m_pointsWidget = nullptr; ///< Область отображения точек.
-    QVector<Worker *> m_workers;            ///< Рабочие объекты.
-    QVector<QFuture<void>> m_futures;       ///< Запуски через QtConcurrent.
-    int m_X = 0;                            ///< Общая для всех worker-ов координата X.
-    int m_activeWorkers = 0;                ///< Число worker-ов, работающих в текущем запуске.
+    Ui::MainWindow *ui = nullptr;                   ///< Сгенерированный интерфейс формы.
+    PointsWidget *m_pointsWidget = nullptr;         ///< Область отображения точек.
+    WorkersLauncher *m_workersLauncher = nullptr;   ///< Координатор запуска Worker.
 };
 
 #endif // MAINWINDOW_H

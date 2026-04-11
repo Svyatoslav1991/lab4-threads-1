@@ -2,36 +2,18 @@
 #include "ui_mainwindow.h"
 
 #include <QAction>
-#include <QColor>
 #include <QStatusBar>
 #include <QThread>
-#include <QThreadPool>
 #include <QVBoxLayout>
-#include <QtConcurrent>
 
-#include "myrunnable.h"
 #include "pointswidget.h"
-#include "worker.h"
+#include "workerslauncher.h"
 
 namespace
 {
 constexpr int kStartX = 20;
 constexpr int kRightPadding = 20;
 constexpr int kXAdvancePerPoint = 1;
-
-constexpr int kStartY = 40;
-constexpr int kDeltaY = 35;
-
-const QVector<QColor> kWorkerColors = {
-    Qt::red,
-    Qt::blue,
-    Qt::darkGreen,
-    Qt::magenta,
-    Qt::darkYellow,
-    Qt::cyan,
-    Qt::black,
-    Qt::darkRed
-};
 }
 
 //--------------------------------------------------------------------------
@@ -46,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     initializeUi();
     setupPointsWidget();
-    createWorkers();
+    setupWorkersLauncher();
     connectActions();
 }
 
@@ -54,9 +36,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    waitForFutures();
-    QThreadPool::globalInstance()->waitForDone();
-    destroyWorkers();
     delete ui;
 }
 
@@ -95,17 +74,9 @@ void MainWindow::slotAddPoint(MyPoint point)
 
 //--------------------------------------------------------------------------
 
-void MainWindow::slotWorkerFinished()
+void MainWindow::slotWorkersFinished()
 {
-    if (m_activeWorkers <= 0) {
-        return;
-    }
-
-    --m_activeWorkers;
-
-    if (m_activeWorkers == 0) {
-        statusBar()->showMessage(QStringLiteral("Все worker-объекты завершили работу"));
-    }
+    statusBar()->showMessage(QStringLiteral("Все worker-объекты завершили работу"));
 }
 
 //--------------------------------------------------------------------------
@@ -146,48 +117,16 @@ void MainWindow::setupPointsWidget()
 
 //--------------------------------------------------------------------------
 
-void MainWindow::createWorkers()
+void MainWindow::setupWorkersLauncher()
 {
-    const int workerCount = qMax(1, QThread::idealThreadCount());
-    m_workers.reserve(workerCount);
+    m_workersLauncher = new WorkersLauncher(this);
 
-    for (int index = 0; index < workerCount; ++index) {
-        const int y = kStartY + index * kDeltaY;
-        const QColor color = kWorkerColors.at(index % kWorkerColors.size());
-
-        Worker *worker = new Worker(y,
-                                    &m_X,
-                                    color,
-                                    0,
-                                    0);
-
-        connectWorkerSignals(worker);
-        m_workers.push_back(worker);
-    }
-}
-
-//--------------------------------------------------------------------------
-
-void MainWindow::destroyWorkers()
-{
-    qDeleteAll(m_workers);
-    m_workers.clear();
-}
-
-//--------------------------------------------------------------------------
-
-void MainWindow::connectWorkerSignals(Worker *worker)
-{
-    if (worker == nullptr) {
-        return;
-    }
-
-    connect(worker, &Worker::signalAddPoint,
+    connect(m_workersLauncher, &WorkersLauncher::signalAddPoint,
             this, &MainWindow::slotAddPoint,
             Qt::QueuedConnection);
 
-    connect(worker, &Worker::endWork,
-            this, &MainWindow::slotWorkerFinished,
+    connect(m_workersLauncher, &WorkersLauncher::signalAllWorkersFinished,
+            this, &MainWindow::slotWorkersFinished,
             Qt::QueuedConnection);
 }
 
@@ -195,68 +134,41 @@ void MainWindow::connectWorkerSignals(Worker *worker)
 
 void MainWindow::startWorkers(LaunchMode mode)
 {
-    if (hasRunningTasks()) {
+    if (m_workersLauncher == nullptr) {
+        statusBar()->showMessage(QStringLiteral("WorkersLauncher не инициализирован"));
+        return;
+    }
+
+    if (m_workersLauncher->hasRunningTasks()) {
         statusBar()->showMessage(
             QStringLiteral("Предыдущий запуск ещё не завершён."));
         return;
     }
 
-    prepareWorkersForRun();
+    clearPointsView();
+
+    const int stepsPerWorker = calculateStepsPerWorker();
+    const qsizetype delayIterations = calculateDelayIterations();
+
+    m_workersLauncher->prepareForRun(kStartX,
+                                     stepsPerWorker,
+                                     delayIterations);
 
     switch (mode) {
     case LaunchMode::QtConcurrent:
-        launchWorkersViaQtConcurrent();
+        m_workersLauncher->launchViaQtConcurrent();
         statusBar()->showMessage(
             QStringLiteral("QtConcurrent запущен, worker-объектов: %1")
-                .arg(m_workers.size()));
+                .arg(m_workersLauncher->workerCount()));
         break;
 
     case LaunchMode::QRunnable:
-        launchWorkersViaQRunnable();
+        m_workersLauncher->launchViaQRunnable();
         statusBar()->showMessage(
             QStringLiteral("QRunnable запущен, worker-объектов: %1")
-                .arg(m_workers.size()));
+                .arg(m_workersLauncher->workerCount()));
         break;
     }
-}
-
-//--------------------------------------------------------------------------
-
-void MainWindow::launchWorkersViaQtConcurrent()
-{
-    m_futures.clear();
-
-    for (Worker *worker : m_workers) {
-        m_futures.push_back(QtConcurrent::run(worker, &Worker::doWork));
-    }
-}
-
-//--------------------------------------------------------------------------
-
-void MainWindow::launchWorkersViaQRunnable()
-{
-    for (Worker *worker : m_workers) {
-        MyRunnable *runnable = new MyRunnable(worker);
-        QThreadPool::globalInstance()->start(runnable);
-    }
-}
-
-//--------------------------------------------------------------------------
-
-void MainWindow::waitForFutures()
-{
-    for (QFuture<void> &future : m_futures) {
-        future.waitForFinished();
-    }
-
-    m_futures.clear();
-}
-
-//--------------------------------------------------------------------------
-
-bool MainWindow::hasRunningTasks() const noexcept
-{
-    return m_activeWorkers > 0;
 }
 
 //--------------------------------------------------------------------------
@@ -272,34 +184,11 @@ void MainWindow::clearPointsView()
 
 //--------------------------------------------------------------------------
 
-void MainWindow::prepareWorkersForRun()
-{
-    clearPointsView();
-    m_X = kStartX;
-    m_activeWorkers = m_workers.size();
-
-    const int stepsPerWorker = calculateStepsPerWorker();
-    const qsizetype delayIterations = calculateDelayIterations();
-
-    configureWorkersForRun(stepsPerWorker, delayIterations);
-}
-
-//--------------------------------------------------------------------------
-
-void MainWindow::configureWorkersForRun(int stepsPerWorker,
-                                        qsizetype delayIterations) noexcept
-{
-    for (Worker *worker : m_workers) {
-        worker->setSteps(stepsPerWorker);
-        worker->setDelayIterations(delayIterations);
-    }
-}
-
-//--------------------------------------------------------------------------
-
 int MainWindow::calculateStepsPerWorker() const noexcept
 {
-    if (m_pointsWidget == nullptr || m_workers.isEmpty()) {
+    if (m_pointsWidget == nullptr ||
+        m_workersLauncher == nullptr ||
+        m_workersLauncher->workerCount() <= 0) {
         return 1;
     }
 
@@ -309,7 +198,7 @@ int MainWindow::calculateStepsPerWorker() const noexcept
     const int totalPointSlots =
         qMax(1, drawableWidth / kXAdvancePerPoint);
 
-    return qMax(1, totalPointSlots / m_workers.size());
+    return qMax(1, totalPointSlots / m_workersLauncher->workerCount());
 }
 
 //--------------------------------------------------------------------------
