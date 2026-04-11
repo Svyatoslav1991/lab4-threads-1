@@ -3,11 +3,14 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPalette>
+#include <QPen>
 
 namespace
 {
 constexpr int kMinimumWidth = 320;
 constexpr int kMinimumHeight = 180;
+constexpr int kLineWidth = 2;
+constexpr int kLineHeight = 20;
 }
 
 //--------------------------------------------------------------------------
@@ -79,6 +82,26 @@ void PointsWidget::paintBackground(QPainter &painter) const
 void PointsWidget::paintPoints(QPainter &painter) const
 {
     for (const MyPoint &point : m_points) {
-        point.draw(painter);
+        paintPoint(painter, point);
     }
+}
+
+//--------------------------------------------------------------------------
+
+void PointsWidget::paintPoint(QPainter &painter, const MyPoint &point) const
+{
+    painter.save();
+
+    QPen pen(point.color());
+    pen.setWidth(kLineWidth);
+    painter.setPen(pen);
+
+    const QPoint &position = point.point();
+
+    painter.drawLine(position.x(),
+                     position.y(),
+                     position.x(),
+                     position.y() + kLineHeight);
+
+    painter.restore();
 }

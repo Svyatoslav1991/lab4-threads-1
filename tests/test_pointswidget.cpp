@@ -1,11 +1,12 @@
 #include <QtTest/QtTest>
 
+#include <QBrush>
 #include <QColor>
 #include <QImage>
 #include <QPalette>
 
-#include "pointswidget.h"
 #include "mypoint.h"
+#include "pointswidget.h"
 
 class TestPointsWidget : public QObject
 {
@@ -16,8 +17,10 @@ private slots:
     void addPoint_storesPointAndIncreasesCount();
     void clearPoints_removesAllPoints();
     void clearPoints_whenAlreadyEmpty_remainsEmpty();
-    void render_afterAddingPoint_drawsPointWithExpectedColor();
+    void render_afterAddingPoint_drawsVerticalLineWithExpectedColor();
 };
+
+//--------------------------------------------------------------------------
 
 void TestPointsWidget::constructor_initialState_isEmpty()
 {
@@ -26,6 +29,8 @@ void TestPointsWidget::constructor_initialState_isEmpty()
     QCOMPARE(widget.pointCount(), 0);
     QVERIFY(widget.points().isEmpty());
 }
+
+//--------------------------------------------------------------------------
 
 void TestPointsWidget::addPoint_storesPointAndIncreasesCount()
 {
@@ -43,6 +48,8 @@ void TestPointsWidget::addPoint_storesPointAndIncreasesCount()
     QCOMPARE(widget.points().at(1), second);
 }
 
+//--------------------------------------------------------------------------
+
 void TestPointsWidget::clearPoints_removesAllPoints()
 {
     PointsWidget widget;
@@ -57,6 +64,8 @@ void TestPointsWidget::clearPoints_removesAllPoints()
     QVERIFY(widget.points().isEmpty());
 }
 
+//--------------------------------------------------------------------------
+
 void TestPointsWidget::clearPoints_whenAlreadyEmpty_remainsEmpty()
 {
     PointsWidget widget;
@@ -67,10 +76,12 @@ void TestPointsWidget::clearPoints_whenAlreadyEmpty_remainsEmpty()
     QVERIFY(widget.points().isEmpty());
 }
 
-void TestPointsWidget::render_afterAddingPoint_drawsPointWithExpectedColor()
+//--------------------------------------------------------------------------
+
+void TestPointsWidget::render_afterAddingPoint_drawsVerticalLineWithExpectedColor()
 {
     PointsWidget widget;
-    widget.resize(20, 20);
+    widget.resize(40, 40);
 
     QPalette palette = widget.palette();
     palette.setBrush(QPalette::Window, QBrush(Qt::white));
@@ -83,10 +94,12 @@ void TestPointsWidget::render_afterAddingPoint_drawsPointWithExpectedColor()
 
     widget.render(&image);
 
-    QCOMPARE(image.pixelColor(5, 7), QColor(Qt::red));
+    for (int y = 7; y <= 27; ++y) {
+        QCOMPARE(image.pixelColor(5, y), QColor(Qt::red));
+    }
 
     QCOMPARE(image.pixelColor(0, 0), QColor(Qt::white));
-    QCOMPARE(image.pixelColor(15, 15), QColor(Qt::white));
+    QCOMPARE(image.pixelColor(20, 20), QColor(Qt::white));
 }
 
 QTEST_MAIN(TestPointsWidget)

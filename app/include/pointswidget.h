@@ -16,8 +16,7 @@
  * - очистку данных;
  * - отрисовку содержимого.
  *
- * Это позволяет не перегружать MainWindow логикой хранения
- * и рисования.
+ * Это позволяет держать визуализацию в UI-слое, а MyPoint — в core-слое.
  */
 class PointsWidget final : public QWidget
 {
@@ -70,6 +69,13 @@ private:
      * @param painter Объект рисования.
      */
     void paintPoints(QPainter &painter) const;
+
+    /**
+     * @brief Отрисовывает одну метку как короткую вертикальную линию.
+     * @param painter Объект рисования.
+     * @param point Метка для отрисовки.
+     */
+    void paintPoint(QPainter &painter, const MyPoint &point) const;
 
 private:
     QVector<MyPoint> m_points; ///< Контейнер меток для отображения.
