@@ -55,3 +55,17 @@ target_link_libraries(test_myrunnable
 )
 
 add_test(NAME test_myrunnable COMMAND test_myrunnable)
+
+add_executable(test_workerslauncher
+    test_workerslauncher.cpp
+)
+
+target_link_libraries(test_workerslauncher
+    PRIVATE
+        lab4_threads_1_core
+        Qt${QT_VERSION_MAJOR}::Test
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Concurrent
+)
+
+add_test(NAME test_workerslauncher COMMAND test_workerslauncher)
