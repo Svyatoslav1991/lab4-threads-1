@@ -41,3 +41,17 @@ target_link_libraries(test_pointswidget
 )
 
 add_test(NAME test_pointswidget COMMAND test_pointswidget)
+
+add_executable(test_myrunnable
+    test_myrunnable.cpp
+)
+
+target_link_libraries(test_myrunnable
+    PRIVATE
+        lab4_threads_1_core
+        Qt${QT_VERSION_MAJOR}::Test
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Concurrent
+)
+
+add_test(NAME test_myrunnable COMMAND test_myrunnable)
