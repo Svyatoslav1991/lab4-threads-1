@@ -16,16 +16,16 @@ void MyPoint::draw(QPainter &painter) const
 {
     painter.save();
 
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QBrush(m_color));
+    QPen pen(m_color);
+    pen.setWidth(2);
+    painter.setPen(pen);
 
-    constexpr int pointSize = 4;
-    const int halfSize = pointSize / 2;
+    constexpr int lineHeight = 20;
 
-    painter.drawEllipse(m_point.x() - halfSize,
-                        m_point.y() - halfSize,
-                        pointSize,
-                        pointSize);
+    painter.drawLine(m_point.x(),
+                     m_point.y(),
+                     m_point.x(),
+                     m_point.y() + lineHeight);
 
     painter.restore();
 }

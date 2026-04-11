@@ -180,7 +180,7 @@ void MainWindow::createWorkers()
     };
 
     constexpr int startY = 40;
-    constexpr int deltaY = 25;
+    constexpr int deltaY = 35;
 
     m_workers.reserve(workerCount);
 
