@@ -109,12 +109,22 @@ signals:
 
 private:
     /**
+     * @brief Проверяет, доступна ли общая координата X.
+     */
+    bool hasSharedX() const noexcept;
+
+    /**
+     * @brief Выполняет один шаг работы.
+     */
+    void performStep();
+
+    /**
      * @brief Создаёт очередную точку на основе текущего состояния.
      */
     MyPoint makeCurrentPoint() const;
 
     /**
-     * @brief Инкрементирует общую координату X, если она доступна.
+     * @brief Инкрементирует общую координату X.
      */
     void incrementSharedX() noexcept;
 
