@@ -84,3 +84,7 @@ desktop.ini
 *.tar
 *.tar.gz
 *.rar
+
+*.autosave
+
+

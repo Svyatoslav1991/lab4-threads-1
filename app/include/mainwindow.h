@@ -20,10 +20,10 @@ class Worker;
  * @brief Главное окно первого приложения лабораторной работы по потокам.
  *
  * @details
- * На текущем этапе класс отвечает за:
+ * Класс отвечает за:
  * - инициализацию UI;
  * - создание области отображения точек;
- * - создание рабочих объектов Worker;
+ * - создание и настройку Worker-объектов;
  * - запуск Worker через QtConcurrent::run();
  * - запуск Worker через QRunnable + QThreadPool;
  * - приём точек от Worker и их отображение.
@@ -35,6 +35,16 @@ class MainWindow final : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
+
+private:
+    /**
+     * @brief Способ запуска worker-объектов.
+     */
+    enum class LaunchMode
+    {
+        QtConcurrent,
+        QRunnable
+    };
 
 private slots:
     /**
@@ -80,7 +90,7 @@ private:
     void setupPointsWidget();
 
     /**
-     * @brief Создаёт рабочие объекты Worker и настраивает их соединения.
+     * @brief Создаёт рабочие объекты Worker.
      */
     void createWorkers();
 
@@ -88,6 +98,28 @@ private:
      * @brief Освобождает рабочие объекты Worker.
      */
     void destroyWorkers();
+
+    /**
+     * @brief Настраивает signal-slot соединения для Worker.
+     * @param worker Рабочий объект.
+     */
+    void connectWorkerSignals(Worker *worker);
+
+    /**
+     * @brief Запускает worker-объекты указанным способом.
+     * @param mode Способ запуска.
+     */
+    void startWorkers(LaunchMode mode);
+
+    /**
+     * @brief Запускает worker-объекты через QtConcurrent.
+     */
+    void launchWorkersViaQtConcurrent();
+
+    /**
+     * @brief Запускает worker-объекты через QRunnable.
+     */
+    void launchWorkersViaQRunnable();
 
     /**
      * @brief Ожидает завершения всех задач QtConcurrent.
@@ -100,6 +132,11 @@ private:
     bool hasRunningTasks() const noexcept;
 
     /**
+     * @brief Очищает область отображения без вывода сообщения в status bar.
+     */
+    void clearPointsView();
+
+    /**
      * @brief Подготавливает Worker-объекты к новому запуску.
      *
      * @details
@@ -110,6 +147,14 @@ private:
      * - задаёт программную задержку.
      */
     void prepareWorkersForRun();
+
+    /**
+     * @brief Применяет параметры запуска ко всем worker-объектам.
+     * @param stepsPerWorker Количество шагов на один Worker.
+     * @param delayIterations Длина программной задержки.
+     */
+    void configureWorkersForRun(int stepsPerWorker,
+                                qsizetype delayIterations) noexcept;
 
     /**
      * @brief Вычисляет число шагов на один Worker по текущей ширине области рисования.
@@ -127,7 +172,7 @@ private:
     QVector<Worker *> m_workers;            ///< Рабочие объекты.
     QVector<QFuture<void>> m_futures;       ///< Запуски через QtConcurrent.
     int m_X = 0;                            ///< Общая для всех worker-ов координата X.
-    int m_activeWorkers = 0;                ///< Число worker'ов, работающих в текущем запуске.
+    int m_activeWorkers = 0;                ///< Число worker-ов, работающих в текущем запуске.
 };
 
 #endif // MAINWINDOW_H
