@@ -126,7 +126,7 @@ private:
     PointsWidget *m_pointsWidget = nullptr; ///< Область отображения точек.
     QVector<Worker *> m_workers;            ///< Рабочие объекты.
     QVector<QFuture<void>> m_futures;       ///< Запуски через QtConcurrent.
-    int m_x = 0;                            ///< Общая для всех worker'ов координата X.
+    int m_X = 0;                            ///< Общая для всех worker-ов координата X.
     int m_activeWorkers = 0;                ///< Число worker'ов, работающих в текущем запуске.
 };
 

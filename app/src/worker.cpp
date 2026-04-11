@@ -10,8 +10,8 @@ Worker::Worker(int y,
                qsizetype delayIterations,
                QObject *parent)
     : QObject(parent)
-    , m_sharedX(sharedX)
-    , m_y(y)
+    , m_pX(sharedX)
+    , m_Y(y)
     , m_color(color)
     , m_steps(std::max(0, steps))
     , m_delayIterations(std::max<qsizetype>(0, delayIterations))
@@ -22,14 +22,14 @@ Worker::Worker(int y,
 
 int Worker::y() const noexcept
 {
-    return m_y;
+    return m_Y;
 }
 
 //------------------------------------------------------------------------------------
 
 int *Worker::sharedX() const noexcept
 {
-    return m_sharedX;
+    return m_pX;
 }
 
 //------------------------------------------------------------------------------------
@@ -67,11 +67,11 @@ void Worker::setDelayIterations(qsizetype delayIterations) noexcept
     m_delayIterations = std::max<qsizetype>(0, delayIterations);
 }
 
-//------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 void Worker::doWork()
 {
-    if (m_sharedX == nullptr) {
+    if (m_pX == nullptr) {
         emit endWork();
         return;
     }
@@ -85,18 +85,18 @@ void Worker::doWork()
     emit endWork();
 }
 
-//------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 
 MyPoint Worker::makeCurrentPoint() const
 {
-    return MyPoint(QPoint(*m_sharedX, m_y), m_color);
+    return MyPoint(QPoint(*m_pX, m_Y), m_color);
 }
 
 //------------------------------------------------------------------------------------
 
 void Worker::incrementSharedX() noexcept
 {
-    ++(*m_sharedX);
+    ++(*m_pX);
 }
 
 //------------------------------------------------------------------------------------

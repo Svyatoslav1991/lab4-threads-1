@@ -13,7 +13,13 @@
 #include "pointswidget.h"
 #include "worker.h"
 
-//--------------------------------------------------------------------------
+namespace
+{
+constexpr int kStartX = 20;
+constexpr int kRightPadding = 20;
+constexpr int kXAdvancePerPoint = 1;
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -29,6 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 //--------------------------------------------------------------------------
+
 MainWindow::~MainWindow()
 {
     waitForFutures();
@@ -38,6 +45,7 @@ MainWindow::~MainWindow()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::slotQtConcurrent()
 {
     if (hasRunningTasks()) {
@@ -59,6 +67,7 @@ void MainWindow::slotQtConcurrent()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::slotQRunnable()
 {
     if (hasRunningTasks()) {
@@ -80,6 +89,7 @@ void MainWindow::slotQRunnable()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::slotClear()
 {
     if (m_pointsWidget == nullptr) {
@@ -91,6 +101,7 @@ void MainWindow::slotClear()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::slotAddPoint(MyPoint point)
 {
     if (m_pointsWidget == nullptr) {
@@ -101,6 +112,7 @@ void MainWindow::slotAddPoint(MyPoint point)
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::slotWorkerFinished()
 {
     if (m_activeWorkers <= 0) {
@@ -115,6 +127,7 @@ void MainWindow::slotWorkerFinished()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::initializeUi()
 {
     setWindowTitle(QStringLiteral("Потоки + worker"));
@@ -124,6 +137,7 @@ void MainWindow::initializeUi()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::connectActions()
 {
     connect(ui->actionQtConcurrent, &QAction::triggered,
@@ -137,6 +151,7 @@ void MainWindow::connectActions()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::setupPointsWidget()
 {
     auto *layout = new QVBoxLayout(ui->centralwidget);
@@ -148,6 +163,7 @@ void MainWindow::setupPointsWidget()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::createWorkers()
 {
     const int workerCount = qMax(1, QThread::idealThreadCount());
@@ -173,7 +189,7 @@ void MainWindow::createWorkers()
         const QColor color = colors.at(index % colors.size());
 
         Worker *worker = new Worker(y,
-                                    &m_x,
+                                    &m_X,
                                     color,
                                     0,
                                     0);
@@ -191,6 +207,7 @@ void MainWindow::createWorkers()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::destroyWorkers()
 {
     qDeleteAll(m_workers);
@@ -198,6 +215,7 @@ void MainWindow::destroyWorkers()
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::waitForFutures()
 {
     for (QFuture<void> &future : m_futures) {
@@ -208,16 +226,18 @@ void MainWindow::waitForFutures()
 }
 
 //--------------------------------------------------------------------------
+
 bool MainWindow::hasRunningTasks() const noexcept
 {
     return m_activeWorkers > 0;
 }
 
 //--------------------------------------------------------------------------
+
 void MainWindow::prepareWorkersForRun()
 {
     slotClear();
-    m_x = 0;
+    m_X = kStartX;
     m_activeWorkers = m_workers.size();
 
     const int stepsPerWorker = calculateStepsPerWorker();
@@ -230,18 +250,25 @@ void MainWindow::prepareWorkersForRun()
 }
 
 //--------------------------------------------------------------------------
+
 int MainWindow::calculateStepsPerWorker() const noexcept
 {
     if (m_pointsWidget == nullptr || m_workers.isEmpty()) {
         return 1;
     }
 
-    const int availableWidth = qMax(1, m_pointsWidget->width() - 20);
-    return qMax(1, availableWidth / m_workers.size());
+    const int drawableWidth =
+        qMax(1, m_pointsWidget->width() - kStartX - kRightPadding);
+
+    const int totalPointSlots =
+        qMax(1, drawableWidth / kXAdvancePerPoint);
+
+    return qMax(1, totalPointSlots / m_workers.size());
 }
 
 //--------------------------------------------------------------------------
+
 qsizetype MainWindow::calculateDelayIterations() const noexcept
 {
-    return 1'000'000;
+    return 3'000'000;
 }

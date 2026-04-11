@@ -126,11 +126,11 @@ private:
     void busyDelay() const noexcept;
 
 private:
-    int *m_sharedX = nullptr;                      ///< Общая координата X.
-    int m_y = 0;                                  ///< Фиксированная координата Y.
-    QColor m_color = Qt::black;                   ///< Цвет точек данного worker'а.
-    int m_steps = 0;                              ///< Число итераций.
-    qsizetype m_delayIterations = 0;              ///< Длина программной задержки.
+    int *m_pX = nullptr;                ///< Указатель на общий X.
+    int m_Y = 0;                        ///< Фиксированная координата Y.
+    QColor m_color = Qt::black;         ///< Цвет worker-а.
+    int m_steps = 0;                    ///< Количество шагов.
+    qsizetype m_delayIterations = 0;    ///< Длина программной задержки.
 };
 
 #endif // WORKER_H
