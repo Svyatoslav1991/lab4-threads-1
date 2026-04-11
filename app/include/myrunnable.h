@@ -6,15 +6,15 @@
 class Worker;
 
 /**
- * @brief Обёртка над Worker для запуска через QThreadPool.
+ * @brief Тонкая обёртка над Worker для запуска через QThreadPool.
  *
  * @details
- * Класс соответствует заданию с QRunnable:
- * - хранит указатель на Worker;
- * - в методе run() вызывает Worker::doWork().
+ * Класс:
+ * - хранит указатель на Worker, которым не владеет;
+ * - в методе run() делегирует выполнение в Worker::doWork().
  *
- * Объект передаётся под управление QThreadPool и после start()
- * не должен использоваться напрямую.
+ * После передачи объекта в QThreadPool через start() сам runnable
+ * удаляется пулом автоматически.
  */
 class MyRunnable final : public QRunnable
 {
@@ -31,7 +31,7 @@ public:
     void run() override;
 
 private:
-    Worker *m_worker = nullptr; ///< Рабочий объект, не принадлежащий MyRunnable.
+    Worker *m_worker = nullptr; ///< Рабочий объект, которым MyRunnable не владеет.
 };
 
 #endif // MYRUNNABLE_H

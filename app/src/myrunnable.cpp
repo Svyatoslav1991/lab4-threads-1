@@ -1,6 +1,7 @@
 #include "myrunnable.h"
 #include "worker.h"
 
+
 MyRunnable::MyRunnable(Worker *worker)
     : m_worker(worker)
 {
