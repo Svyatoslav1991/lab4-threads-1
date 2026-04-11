@@ -84,6 +84,7 @@ void WorkersLauncher::waitForFinished()
 
     m_futures.clear();
     QThreadPool::globalInstance()->waitForDone();
+    m_activeWorkers = 0;
 }
 
 //--------------------------------------------------------------------------
