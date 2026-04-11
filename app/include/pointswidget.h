@@ -7,16 +7,17 @@
 #include "mypoint.h"
 
 /**
- * @brief Виджет для хранения и отображения набора точек MyPoint.
+ * @brief Виджет для хранения и отображения набора объектов MyPoint.
  *
  * @details
  * Класс инкапсулирует:
- * - контейнер точек;
- * - добавление новых точек;
+ * - контейнер меток;
+ * - добавление новых меток;
  * - очистку данных;
  * - отрисовку содержимого.
  *
- * Это позволяет не перегружать MainWindow логикой рисования.
+ * Это позволяет не перегружать MainWindow логикой хранения
+ * и рисования.
  */
 class PointsWidget final : public QWidget
 {
@@ -24,41 +25,54 @@ class PointsWidget final : public QWidget
 
 public:
     /**
-     * @brief Создаёт виджет отображения точек.
+     * @brief Создаёт виджет отображения меток.
      * @param parent Родительский виджет.
      */
     explicit PointsWidget(QWidget *parent = nullptr);
 
     /**
-     * @brief Добавляет точку и инициирует перерисовку.
-     * @param point Точка для отображения.
+     * @brief Добавляет метку и инициирует перерисовку.
+     * @param point Метка для отображения.
      */
     void addPoint(const MyPoint &point);
 
     /**
-     * @brief Очищает все точки и инициирует перерисовку.
+     * @brief Очищает все метки и инициирует перерисовку.
      */
     void clearPoints();
 
     /**
-     * @brief Возвращает все накопленные точки.
+     * @brief Возвращает все накопленные метки.
      */
     const QVector<MyPoint> &points() const noexcept;
 
     /**
-     * @brief Возвращает количество накопленных точек.
+     * @brief Возвращает количество накопленных меток.
      */
     int pointCount() const noexcept;
 
 protected:
     /**
-     * @brief Отрисовывает все накопленные точки.
+     * @brief Отрисовывает содержимое виджета.
      * @param event Событие перерисовки.
      */
     void paintEvent(QPaintEvent *event) override;
 
 private:
-    QVector<MyPoint> m_points; ///< Контейнер точек для отображения.
+    /**
+     * @brief Отрисовывает фон виджета.
+     * @param painter Объект рисования.
+     */
+    void paintBackground(QPainter &painter) const;
+
+    /**
+     * @brief Отрисовывает все накопленные метки.
+     * @param painter Объект рисования.
+     */
+    void paintPoints(QPainter &painter) const;
+
+private:
+    QVector<MyPoint> m_points; ///< Контейнер меток для отображения.
 };
 
 #endif // POINTSWIDGET_H

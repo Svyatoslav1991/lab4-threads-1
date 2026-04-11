@@ -73,7 +73,7 @@ void TestPointsWidget::render_afterAddingPoint_drawsPointWithExpectedColor()
     widget.resize(20, 20);
 
     QPalette palette = widget.palette();
-    palette.setBrush(QPalette::Base, QBrush(Qt::white));
+    palette.setBrush(QPalette::Window, QBrush(Qt::white));
     widget.setPalette(palette);
 
     widget.addPoint(MyPoint(QPoint(5, 7), Qt::red));

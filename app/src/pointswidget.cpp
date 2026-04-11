@@ -4,19 +4,31 @@
 #include <QPainter>
 #include <QPalette>
 
+namespace
+{
+constexpr int kMinimumWidth = 320;
+constexpr int kMinimumHeight = 180;
+}
+
+//--------------------------------------------------------------------------
+
 PointsWidget::PointsWidget(QWidget *parent)
     : QWidget(parent)
 {
     setAttribute(Qt::WA_OpaquePaintEvent, true);
     setAutoFillBackground(false);
-    setMinimumSize(320, 180);
+    setMinimumSize(kMinimumWidth, kMinimumHeight);
 }
+
+//--------------------------------------------------------------------------
 
 void PointsWidget::addPoint(const MyPoint &point)
 {
     m_points.push_back(point);
     update();
 }
+
+//--------------------------------------------------------------------------
 
 void PointsWidget::clearPoints()
 {
@@ -28,15 +40,21 @@ void PointsWidget::clearPoints()
     update();
 }
 
+//--------------------------------------------------------------------------
+
 const QVector<MyPoint> &PointsWidget::points() const noexcept
 {
     return m_points;
 }
 
+//--------------------------------------------------------------------------
+
 int PointsWidget::pointCount() const noexcept
 {
     return m_points.size();
 }
+
+//--------------------------------------------------------------------------
 
 void PointsWidget::paintEvent(QPaintEvent *event)
 {
@@ -44,8 +62,22 @@ void PointsWidget::paintEvent(QPaintEvent *event)
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, false);
-    painter.fillRect(rect(), palette().brush(QPalette::Base));
 
+    paintBackground(painter);
+    paintPoints(painter);
+}
+
+//--------------------------------------------------------------------------
+
+void PointsWidget::paintBackground(QPainter &painter) const
+{
+    painter.fillRect(rect(), palette().brush(QPalette::Window));
+}
+
+//--------------------------------------------------------------------------
+
+void PointsWidget::paintPoints(QPainter &painter) const
+{
     for (const MyPoint &point : m_points) {
         point.draw(painter);
     }
