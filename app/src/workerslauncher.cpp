@@ -58,7 +58,12 @@ void WorkersLauncher::launchViaQtConcurrent()
     m_futures.clear();
 
     for (Worker *worker : m_workers) {
-        m_futures.push_back(QtConcurrent::run(worker, &Worker::doWork));
+        m_futures.push_back(QtConcurrent::run([worker]()
+        {
+            if (worker != nullptr) {
+                worker->doWork();
+            }
+        }));
     }
 }
 
