@@ -12,9 +12,11 @@ set(CMAKE_AUTORCC ON)
 
 include(CTest)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Concurrent)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Concurrent)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets Concurrent Test)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets Concurrent Test)
 
+add_subdirectory(libs/workers_core)
+add_subdirectory(libs/workers_widgets)
 add_subdirectory(app)
 
 if(BUILD_TESTING)

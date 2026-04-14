@@ -1,50 +1,37 @@
 set(APP_TARGET lab4_threads_1)
-set(CORE_TARGET lab4_threads_1_core)
+set(APP_CORE_TARGET lab4_threads_1_app)
 
-set(CORE_SOURCES
+add_library(${APP_CORE_TARGET} STATIC
     include/mainwindow.h
-    include/mypoint.h
-    include/worker.h
-    include/pointswidget.h
     include/myrunnable.h
     include/workerslauncher.h
-    include/workersrunsettings.h
 
     src/mainwindow.cpp
-    src/mypoint.cpp
-    src/mainwindow.ui
-    src/worker.cpp
-    src/pointswidget.cpp
     src/myrunnable.cpp
     src/workerslauncher.cpp
+    src/mainwindow.ui
 )
 
-set(APP_SOURCES
-    src/main.cpp
-)
-
-add_library(${CORE_TARGET} STATIC
-    ${CORE_SOURCES}
-)
-
-target_include_directories(${CORE_TARGET}
+target_include_directories(${APP_CORE_TARGET}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(${CORE_TARGET}
+target_link_libraries(${APP_CORE_TARGET}
     PUBLIC
+        workers_core
+        workers_widgets
         Qt${QT_VERSION_MAJOR}::Widgets
         Qt${QT_VERSION_MAJOR}::Concurrent
 )
 
 add_executable(${APP_TARGET} WIN32
-    ${APP_SOURCES}
+    src/main.cpp
 )
 
 target_link_libraries(${APP_TARGET}
     PRIVATE
-        ${CORE_TARGET}
+        ${APP_CORE_TARGET}
 )
 
 if(WIN32 AND QT_VERSION_MAJOR EQUAL 5)
